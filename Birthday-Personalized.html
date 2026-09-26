@@ -433,12 +433,6 @@
   .field-row .field-label { margin-top: 8px; }
   .setup-btn-group { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
   .setup-btn-group button { padding: 10px 24px; }
-  .btn-download {
-    background: rgba(255, 255, 255, 0.12);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.35);
-  }
-  .btn-download:hover { transform: scale(1.03); background: rgba(255,255,255,0.22); }
 
   /* ---------- Screen 6: Finale ---------- */
   .finale-heart-wrap { width: 150px; margin: 0 auto 18px; position: relative; }
@@ -544,11 +538,9 @@ You made my normal days feel special... just by being there ✨"></textarea>
       <div class="field-hint">Start a line with an emoji to use it as its icon.</div>
 
       <div class="setup-btn-group">
-        <button class="btn-yes" onclick="startExperience()">Create the Surprise ✨</button>
-        <button class="btn-download" onclick="downloadPersonalized()">Download as a gift file 🎁</button>
-        <button class="btn-download" onclick="shareViaWhatsApp()">Share link on WhatsApp 💬</button>
+        <button class="btn-yes" onclick="shareViaWhatsApp()">Create the Surprise ✨</button>
       </div>
-      <div class="field-hint" style="text-align:center; margin-top:8px;">Download = a ready file that opens straight into the surprise. WhatsApp share needs this page hosted online first (e.g. GitHub Pages).</div>
+      <div class="field-hint" style="text-align:center; margin-top:8px;">This opens WhatsApp with a link to your surprise. Needs this page hosted online first (e.g. GitHub Pages).</div>
     </div>
   </div>
 
@@ -777,78 +769,6 @@ function applyGreeting(root, greeting) {
   if (title) title.textContent = `${greeting} 💖`;
 }
 
-function startExperience() {
-  const occasionVal = document.getElementById('input-occasion').value.trim();
-  const nameVal = document.getElementById('input-name').value.trim();
-  const greetingVal = document.getElementById('input-greeting').value.trim();
-  const msgLines = parseLines(document.getElementById('input-messages').value);
-  const reasonLines = parseReasonLines(document.getElementById('input-reasons').value);
-
-  OCCASION_TEXT = occasionVal || OCCASION_TEXT;
-  RECIPIENT_NAME = nameVal || RECIPIENT_NAME;
-  GREETING_TEXT = greetingVal || GREETING_TEXT;
-  if (msgLines.length) messages = msgLines;
-  if (reasonLines.length) reasons = reasonLines;
-
-  applyName(document, OCCASION_TEXT, RECIPIENT_NAME);
-  applyGreeting(document, GREETING_TEXT);
-  showScreen('screen1');
-  secondsBefore = 3;
-  tickClock();
-}
-
-function downloadPersonalized() {
-  const occasionVal = document.getElementById('input-occasion').value.trim() || OCCASION_TEXT;
-  const nameVal = document.getElementById('input-name').value.trim() || RECIPIENT_NAME;
-  const greetingVal = document.getElementById('input-greeting').value.trim() || GREETING_TEXT;
-  const msgLines = parseLines(document.getElementById('input-messages').value);
-  const reasonLines = parseReasonLines(document.getElementById('input-reasons').value);
-  const finalMessages = msgLines.length ? msgLines : messages;
-  const finalReasons = reasonLines.length ? reasonLines : reasons;
-
-  const clone = document.documentElement.cloneNode(true);
-  const s0 = clone.querySelector('#screen0');
-  if (s0) s0.remove();
-  const s1 = clone.querySelector('#screen1');
-  if (s1) s1.classList.add('active');
-  applyName(clone, occasionVal, nameVal);
-  applyGreeting(clone, greetingVal);
-
-  let html = '<!DOCTYPE html>\n' + clone.outerHTML;
-
-  html = html.replace(
-    /\/\* DEFAULT_MESSAGES_START \*\/[\s\S]*?\/\* DEFAULT_MESSAGES_END \*\//,
-    `/* DEFAULT_MESSAGES_START */let messages = ${JSON.stringify(finalMessages)};/* DEFAULT_MESSAGES_END */`
-  );
-  html = html.replace(
-    /\/\* DEFAULT_REASONS_START \*\/[\s\S]*?\/\* DEFAULT_REASONS_END \*\//,
-    `/* DEFAULT_REASONS_START */let reasons = ${JSON.stringify(finalReasons)};/* DEFAULT_REASONS_END */`
-  );
-  html = html.replace(
-    /\/\* DEFAULT_NAME_START \*\/[\s\S]*?\/\* DEFAULT_NAME_END \*\//,
-    `/* DEFAULT_NAME_START */let RECIPIENT_NAME = ${JSON.stringify(nameVal)};/* DEFAULT_NAME_END */`
-  );
-  html = html.replace(
-    /\/\* DEFAULT_GREETING_START \*\/[\s\S]*?\/\* DEFAULT_GREETING_END \*\//,
-    `/* DEFAULT_GREETING_START */let GREETING_TEXT = ${JSON.stringify(greetingVal)};/* DEFAULT_GREETING_END */`
-  );
-  html = html.replace(
-    /\/\* DEFAULT_OCCASION_START \*\/[\s\S]*?\/\* DEFAULT_OCCASION_END \*\//,
-    `/* DEFAULT_OCCASION_START */let OCCASION_TEXT = ${JSON.stringify(occasionVal)};/* DEFAULT_OCCASION_END */`
-  );
-
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  const safeName = (nameVal || 'surprise').replace(/[^a-z0-9]+/gi, '_');
-  a.download = `birthday-surprise-${safeName}.html`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-}
-
 function collectShareData() {
   const occasionVal = document.getElementById('input-occasion').value.trim() || OCCASION_TEXT;
   const nameVal = document.getElementById('input-name').value.trim() || RECIPIENT_NAME;
@@ -977,18 +897,9 @@ function tryLoadFromShareLink() {
     return false;
   }
 }
-
-const loadedFromLink = tryLoadFromShareLink();
-
-// If this is a downloaded/personalized copy, or a shared link, skip the setup form and start right away.
-if (loadedFromLink || !document.getElementById('screen0')) {
-  applyName(document, OCCASION_TEXT, RECIPIENT_NAME);
-  applyGreeting(document, GREETING_TEXT);
-  const s0 = document.getElementById('screen0');
-  if (s0) s0.classList.remove('active');
-  showScreen('screen1');
-  tickClock();
-}
+// NOTE: the actual call happens further below, after `messages` and `reasons`
+// are declared (they're assigned above but declared later in this script with
+// `let`, so calling this before those declarations run would throw).
 
 // ---------- SCREEN 2: DODGE "NO" BUTTON ----------
 let noClickCount = 0;
@@ -1164,6 +1075,19 @@ function openGift() {
 let reasons = [{"icon":"\ud83d\udc96","text":"The way you laugh at your own jokes before you even finish telling them."},{"icon":"\u2615","text":"How you somehow make even the most ordinary days feel like an adventure."},{"icon":"\ud83c\udf19","text":"Every late night conversation that somehow becomes one of my favorite memories."},{"icon":"\ud83c\udfb5","text":"The little songs you hum without even realizing it."},{"icon":"\ud83e\udd0d","text":"How calm and safe I feel whenever you're around."},{"icon":"\u2728","text":"Simply... you being you. That has always been more than enough."}];
 /* DEFAULT_REASONS_END */
 let reasonIndex = 0;
+
+// Now that `messages` and `reasons` both exist, it's safe to check for a shared
+// link (?d=...) and jump straight into the surprise if this came from one.
+const loadedFromLink = tryLoadFromShareLink();
+if (loadedFromLink || !document.getElementById('screen0')) {
+  applyName(document, OCCASION_TEXT, RECIPIENT_NAME);
+  applyGreeting(document, GREETING_TEXT);
+  const s0 = document.getElementById('screen0');
+  if (s0) s0.classList.remove('active');
+  totalButterflies = messages.length;
+  showScreen('screen1');
+  tickClock();
+}
 
 function renderReason() {
   document.getElementById('reason-icon').textContent = reasons[reasonIndex].icon;
