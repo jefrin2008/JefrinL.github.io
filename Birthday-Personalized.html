@@ -36,11 +36,11 @@
     background-size: 300% 300%;
     animation: gradientShift 16s ease infinite;
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
-    justify-content: center;
-    align-items: center;
     color: #fff;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     position: relative;
   }
 
@@ -106,6 +106,8 @@
     text-align: center;
     position: relative;
     z-index: 10;
+    margin: auto;
+    padding: 16px 0;
   }
 
   .screen { display: none; animation: fadeIn 0.8s ease-in-out forwards; }
@@ -163,7 +165,7 @@
   .card {
     background: rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(14px);
-    padding: 32px 28px;
+    padding: 24px 20px;
     border-radius: 26px;
     border: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
@@ -408,25 +410,29 @@
 
   /* ---------- Screen 0: Setup (personalize) ---------- */
   .setup-card { text-align: left; }
-  .setup-card h1 { font-family: 'Dancing Script', cursive; font-size: 2.2rem; text-align: center; margin-bottom: 4px; }
-  .setup-card .setup-hint { text-align: center; font-size: 0.8rem; color: #ffd1f7; margin-bottom: 20px; }
-  .field-label { display: block; font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; color: #ffd1f7; margin: 14px 0 6px; }
-  .field-hint { font-size: 0.72rem; color: #e0a3d7; margin-top: 4px; }
+  .setup-card h1 { font-family: 'Dancing Script', cursive; font-size: 1.7rem; text-align: center; margin-bottom: 2px; }
+  .setup-card .setup-hint { text-align: center; font-size: 0.72rem; color: #ffd1f7; margin-bottom: 10px; }
+  .field-label { display: block; font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; color: #ffd1f7; margin: 8px 0 4px; }
+  .field-hint { font-size: 0.65rem; color: #e0a3d7; margin-top: 2px; }
   .setup-card input[type="text"],
   .setup-card textarea {
     width: 100%;
     background: rgba(255, 255, 255, 0.14);
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 12px;
-    padding: 10px 14px;
+    padding: 7px 12px;
     color: #fff;
-    font-size: 0.92rem;
+    font-size: 0.88rem;
     resize: vertical;
   }
   .setup-card input[type="text"]::placeholder,
   .setup-card textarea::placeholder { color: rgba(255,255,255,0.55); }
-  .setup-card textarea { min-height: 90px; line-height: 1.5; }
-  .setup-btn-group { margin-top: 22px; display: flex; flex-direction: column; gap: 12px; }
+  .setup-card textarea { min-height: 56px; line-height: 1.4; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field-col { flex: 1; min-width: 0; }
+  .field-row .field-label { margin-top: 8px; }
+  .setup-btn-group { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .setup-btn-group button { padding: 10px 24px; }
   .btn-download {
     background: rgba(255, 255, 255, 0.12);
     color: #fff;
@@ -474,6 +480,26 @@
     z-index: 100;
   }
 
+  .scroll-hint {
+    position: fixed;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.4);
+    color: #fff;
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    backdrop-filter: blur(6px);
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .scroll-hint.show { opacity: 1; animation: bounceHint 1.6s ease-in-out infinite; }
+  @keyframes bounceHint { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(5px); } }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
   }
@@ -482,6 +508,7 @@
 <body>
 
 <canvas id="confetti"></canvas>
+<div class="scroll-hint" id="scrollHint" aria-hidden="true">Scroll for more ↓</div>
 <div class="stars-layer" id="starsLayer" aria-hidden="true"></div>
 <div class="ambient-hearts" id="ambientHearts" aria-hidden="true"></div>
 
@@ -492,31 +519,36 @@
       <h1>Make it yours 💌</h1>
       <p class="setup-hint">Fill this in once — the surprise will use your own words.</p>
 
-      <label class="field-label" for="input-occasion">Occasion / heading (e.g. Happy Birthday, Happy Anniversary)</label>
-      <input type="text" id="input-occasion" placeholder="Happy Birthday">
+      <div class="field-row">
+        <div class="field-col">
+          <label class="field-label" for="input-occasion">Occasion</label>
+          <input type="text" id="input-occasion" placeholder="Happy Birthday">
+        </div>
+        <div class="field-col">
+          <label class="field-label" for="input-name">Their name</label>
+          <input type="text" id="input-name" placeholder="e.g. Priya">
+        </div>
+      </div>
 
-      <label class="field-label" for="input-name">Their name</label>
-      <input type="text" id="input-name" placeholder="e.g. Priya">
-
-      <label class="field-label" for="input-greeting">Pet name / greeting (shown on the "Do you love me?" screen)</label>
+      <label class="field-label" for="input-greeting">Pet name / greeting</label>
       <input type="text" id="input-greeting" placeholder="e.g. Hey Sweetheart">
 
-      <label class="field-label" for="input-messages">Love notes (one per line, shown as butterflies to catch)</label>
-      <textarea id="input-messages" rows="6" placeholder="I don't say this enough... but I really love you ❤️
+      <label class="field-label" for="input-messages">Love notes (one per line)</label>
+      <textarea id="input-messages" rows="3" placeholder="I don't say this enough... but I really love you ❤️
 You made my normal days feel special... just by being there ✨"></textarea>
-      <div class="field-hint">Leave blank to keep the defaults. 6–8 lines works best.</div>
+      <div class="field-hint">Leave blank for defaults. 6–8 lines works best.</div>
 
       <label class="field-label" for="input-reasons">Reasons you love them (one per line)</label>
-      <textarea id="input-reasons" rows="6" placeholder="💖 The way you laugh at your own jokes before you finish telling them.
+      <textarea id="input-reasons" rows="3" placeholder="💖 The way you laugh at your own jokes before you finish telling them.
 ☕ How you make ordinary days feel like an adventure."></textarea>
-      <div class="field-hint">Start a line with an emoji to use it as its icon (optional).</div>
+      <div class="field-hint">Start a line with an emoji to use it as its icon.</div>
 
       <div class="setup-btn-group">
         <button class="btn-yes" onclick="startExperience()">Create the Surprise ✨</button>
         <button class="btn-download" onclick="downloadPersonalized()">Download as a gift file 🎁</button>
         <button class="btn-download" onclick="shareViaWhatsApp()">Share link on WhatsApp 💬</button>
       </div>
-      <div class="field-hint" style="text-align:center; margin-top:10px;">The download makes a ready-to-send file that opens straight into the surprise — no form shown. The WhatsApp option only works once this page is uploaded online (e.g. GitHub Pages) — it shares a link with your words baked in.</div>
+      <div class="field-hint" style="text-align:center; margin-top:8px;">Download = a ready file that opens straight into the surprise. WhatsApp share needs this page hosted online first (e.g. GitHub Pages).</div>
     </div>
   </div>
 
@@ -853,7 +885,21 @@ function shareViaWhatsApp() {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+  updateScrollHint();
 }
+
+// ---------- SCROLL HINT (shows only when the active screen is taller than the viewport) ----------
+function updateScrollHint() {
+  const hint = document.getElementById('scrollHint');
+  if (!hint) return;
+  const overflowing = document.documentElement.scrollHeight > window.innerHeight + 4;
+  const scrolledDown = window.scrollY > 20;
+  hint.classList.toggle('show', overflowing && !scrolledDown);
+}
+window.addEventListener('scroll', updateScrollHint, { passive: true });
+window.addEventListener('resize', updateScrollHint);
+updateScrollHint();
 
 // ---------- STAR FIELD ----------
 function createStars() {
