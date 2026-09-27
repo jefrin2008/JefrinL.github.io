@@ -514,7 +514,16 @@
       <p class="setup-hint">Fill this in once — the surprise will use your own words.</p>
 
       <label class="field-label" for="input-finaltext">Final message (shown big at the very end)</label>
-      <input type="text" id="input-finaltext" placeholder="I Love You">
+      <input type="text" id="input-finaltext" placeholder="Eg : Happy Birthday Name">
+
+      <label class="field-label" for="input-asklove">"Do you Want Ask Any Question?" question text</label>
+      <input type="text" id="input-asklove" placeholder="Do you Want Ask Any Question? 🥺">
+
+      <label class="field-label" for="input-reasonsheading">"Just a few reasons..." heading</label>
+      <input type="text" id="input-reasonsheading" placeholder="Just a few reasons... 💭">
+
+      <label class="field-label" for="input-outing">"what you want From me?" question text</label>
+      <input type="text" id="input-outing" placeholder="Eg:So... can we go out tonight? 🌙✨">
 
       <div class="field-row">
         <div class="field-col">
@@ -530,12 +539,12 @@
       <label class="field-label" for="input-greeting">Pet name / greeting</label>
       <input type="text" id="input-greeting" placeholder="e.g. Hey Sweetheart">
 
-      <label class="field-label" for="input-messages">Love notes (one per line)</label>
-      <textarea id="input-messages" rows="3" placeholder="I don't say this enough... but I really love you ❤️
+      <label class="field-label" for="input-messages">Some notes (one per line)</label>
+      <textarea id="input-messages" rows="3" placeholder="I don't say this enough... but I really Like you ❤️
 You made my normal days feel special... just by being there ✨"></textarea>
       <div class="field-hint">Leave blank for defaults. 6–8 lines works best.</div>
 
-      <label class="field-label" for="input-reasons">Reasons you love them (one per line)</label>
+      <label class="field-label" for="input-reasons">Reasons you Like them (one per line)</label>
       <textarea id="input-reasons" rows="3" placeholder="💖 The way you laugh at your own jokes before you finish telling them.
 ☕ How you make ordinary days feel like an adventure."></textarea>
       <div class="field-hint">Start a line with an emoji to use it as its icon.</div>
@@ -578,7 +587,7 @@ You made my normal days feel special... just by being there ✨"></textarea>
   <div id="screen2" class="screen">
     <div class="card">
       <h1 class="title" id="screen2-title">Hey my Love 💖</h1>
-      <p>Do you love me? 🥺</p>
+      <p id="ask-love-text">Do you love me? 🥺</p>
       <div class="sub-msg" id="sub-msg" aria-live="polite"></div>
       <div class="btn-group">
         <button class="btn-yes" onclick="goToScreen3()">Yes 💖</button>
@@ -650,7 +659,7 @@ You made my normal days feel special... just by being there ✨"></textarea>
   </div>
 
   <div id="screen4b" class="screen">
-    <h2 class="reasons-title">Just a few reasons... 💭</h2>
+    <h2 class="reasons-title" id="reasons-title-text">Just a few reasons... 💭</h2>
     <div class="reason-card">
       <div class="reason-icon" id="reason-icon">💖</div>
       <p class="reason-text" id="reason-text"></p>
@@ -692,7 +701,7 @@ You made my normal days feel special... just by being there ✨"></textarea>
         and I'm really lucky to have you in my life ✨
       </p>
       <div class="divider">💫</div>
-      <p style="font-size: 1.1rem; margin-bottom: 15px;">So... can we go out tonight? 🌙✨</p>
+      <p id="ask-outing-text" style="font-size: 1.1rem; margin-bottom: 15px;">So... can we go out tonight? 🌙✨</p>
       <p style="font-size: 0.8rem; color: #ffd1f7; margin-bottom: 15px;">Just you, me &amp; the stars 💫</p>
       <div class="btn-group">
         <button class="btn-yes" onclick="showFinalLove()">Yes ✨</button>
@@ -746,6 +755,9 @@ const rand = (min, max) => Math.random() * (max - min) + min;
 /* DEFAULT_GREETING_START */let GREETING_TEXT = "Hey my Love";/* DEFAULT_GREETING_END */
 /* DEFAULT_OCCASION_START */let OCCASION_TEXT = "Happy Birthday";/* DEFAULT_OCCASION_END */
 /* DEFAULT_FINALTEXT_START */let FINAL_TEXT = "I Love You";/* DEFAULT_FINALTEXT_END */
+/* DEFAULT_ASKLOVE_START */let ASK_LOVE_TEXT = "Do you love me? 🥺";/* DEFAULT_ASKLOVE_END */
+/* DEFAULT_REASONSHEADING_START */let REASONS_HEADING_TEXT = "Just a few reasons... 💭";/* DEFAULT_REASONSHEADING_END */
+/* DEFAULT_OUTING_START */let OUTING_TEXT = "So... can we go out tonight? 🌙✨";/* DEFAULT_OUTING_END */
 
 // ---------- SCREEN 0: SETUP / PERSONALIZE ----------
 function parseLines(raw) {
@@ -778,8 +790,26 @@ function applyFinalText(root, finalText) {
   if (title) title.textContent = finalText;
 }
 
+function applyAskLove(root, text) {
+  const el = root.querySelector('#ask-love-text');
+  if (el) el.textContent = text;
+}
+
+function applyReasonsHeading(root, text) {
+  const el = root.querySelector('#reasons-title-text');
+  if (el) el.textContent = text;
+}
+
+function applyOuting(root, text) {
+  const el = root.querySelector('#ask-outing-text');
+  if (el) el.textContent = text;
+}
+
 function collectShareData() {
   const finalTextVal = document.getElementById('input-finaltext').value.trim() || FINAL_TEXT;
+  const askLoveVal = document.getElementById('input-asklove').value.trim() || ASK_LOVE_TEXT;
+  const reasonsHeadingVal = document.getElementById('input-reasonsheading').value.trim() || REASONS_HEADING_TEXT;
+  const outingVal = document.getElementById('input-outing').value.trim() || OUTING_TEXT;
   const occasionVal = document.getElementById('input-occasion').value.trim() || OCCASION_TEXT;
   const nameVal = document.getElementById('input-name').value.trim() || RECIPIENT_NAME;
   const greetingVal = document.getElementById('input-greeting').value.trim() || GREETING_TEXT;
@@ -787,6 +817,9 @@ function collectShareData() {
   const reasonLines = parseReasonLines(document.getElementById('input-reasons').value);
   return {
     f: finalTextVal,
+    al: askLoveVal,
+    rh: reasonsHeadingVal,
+    ot: outingVal,
     o: occasionVal,
     n: nameVal,
     g: greetingVal,
@@ -899,6 +932,9 @@ function tryLoadFromShareLink() {
   try {
     const data = JSON.parse(decodeURIComponent(raw));
     if (data.f) FINAL_TEXT = data.f;
+    if (data.al) ASK_LOVE_TEXT = data.al;
+    if (data.rh) REASONS_HEADING_TEXT = data.rh;
+    if (data.ot) OUTING_TEXT = data.ot;
     if (data.o) OCCASION_TEXT = data.o;
     if (data.n) RECIPIENT_NAME = data.n;
     if (data.g) GREETING_TEXT = data.g;
@@ -942,7 +978,7 @@ function goToScreen3() {
 
 // ---------- SCREEN 3: BUTTERFLY GAME ----------
 /* DEFAULT_MESSAGES_START */
-let messages = ["I don't say this enough... but I really love you \u2764\ufe0f","You made my normal days feel special... just by being there \u2728","I know I mess up sometimes... and I'm really sorry for that \ud83e\udd7a","But no matter what... I always choose you \u2764\ufe0f","You're the calm in every one of my storms \ud83c\udf19","Every memory with you is one I want to keep forever \ud83d\udcf8","Thank you for loving me exactly as I am \ud83e\udd0d","And today... I just want to see you smile \ud83d\ude0a"];
+let messages = ["I don't say this enough... but I really Like you \u2764\ufe0f","You made my normal days feel special... just by being there \u2728","I know I mess up sometimes... and I'm really sorry for that \ud83e\udd7a","But no matter what... I always Like you \u2764\ufe0f","You're the calm in every one of my storms \ud83c\udf19","Every memory with you is one I want to keep forever \ud83d\udcf8","Thank you for loving me exactly as I am \ud83e\udd0d","And today... I just want to see you smile \ud83d\ude0a"];
 /* DEFAULT_MESSAGES_END */
 
 const wingColors = [
@@ -1095,6 +1131,9 @@ if (loadedFromLink || !document.getElementById('screen0')) {
   applyName(document, OCCASION_TEXT, RECIPIENT_NAME);
   applyGreeting(document, GREETING_TEXT);
   applyFinalText(document, FINAL_TEXT);
+  applyAskLove(document, ASK_LOVE_TEXT);
+  applyReasonsHeading(document, REASONS_HEADING_TEXT);
+  applyOuting(document, OUTING_TEXT);
   const s0 = document.getElementById('screen0');
   if (s0) s0.classList.remove('active');
   totalButterflies = messages.length;
