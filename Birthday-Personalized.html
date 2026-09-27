@@ -433,6 +433,25 @@
   .field-row .field-label { margin-top: 8px; }
   .setup-btn-group { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
   .setup-btn-group button { padding: 10px 24px; }
+  .mode-toggle { display: flex; gap: 8px; margin-top: 6px; }
+  .mode-btn {
+    flex: 1;
+    padding: 9px 10px;
+    font-size: 0.8rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffe9f5;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  }
+  .mode-btn.active {
+    background: linear-gradient(135deg, #ff4081, #ff77a9);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(255, 64, 129, 0.4);
+  }
 
   /* ---------- Screen 6: Finale ---------- */
   .finale-heart-wrap { width: 150px; margin: 0 auto 18px; position: relative; }
@@ -512,6 +531,13 @@
     <div class="card setup-card">
       <h1>Make it yours 💌</h1>
       <p class="setup-hint">Fill this in once — the surprise will use your own words.</p>
+
+      <label class="field-label">Who is this for?</label>
+      <div class="mode-toggle" id="modeToggle">
+        <button type="button" class="mode-btn active" id="mode-love-btn" onclick="setMode('love')">💕 Love</button>
+        <button type="button" class="mode-btn" id="mode-other-btn" onclick="setMode('other')">👨‍👩‍👧 Brother / Sister / Friend</button>
+      </div>
+      <div class="field-hint">Switches the default wording below (you can still type your own anywhere).</div>
 
       <label class="field-label" for="input-finaltext">Final message (shown big at the very end)</label>
       <input type="text" id="input-finaltext" placeholder="Eg : Happy Birthday Name">
@@ -702,7 +728,7 @@ You made my normal days feel special... just by being there ✨"></textarea>
       </p>
       <div class="divider">💫</div>
       <p id="ask-outing-text" style="font-size: 1.1rem; margin-bottom: 15px;">So... can we go out tonight? 🌙✨</p>
-      <p style="font-size: 0.8rem; color: #ffd1f7; margin-bottom: 15px;">Just you, me &amp; the stars 💫</p>
+      <p style="font-size: 0.8rem; color: #ffd1f7; margin-bottom: 15px;" id="outing-sub-text">Just you, me &amp; the stars 💫</p>
       <div class="btn-group">
         <button class="btn-yes" onclick="showFinalLove()">Yes ✨</button>
       </div>
@@ -758,6 +784,56 @@ const rand = (min, max) => Math.random() * (max - min) + min;
 /* DEFAULT_ASKLOVE_START */let ASK_LOVE_TEXT = "Do you love me? 🥺";/* DEFAULT_ASKLOVE_END */
 /* DEFAULT_REASONSHEADING_START */let REASONS_HEADING_TEXT = "Just a few reasons... 💭";/* DEFAULT_REASONSHEADING_END */
 /* DEFAULT_OUTING_START */let OUTING_TEXT = "So... can we go out tonight? 🌙✨";/* DEFAULT_OUTING_END */
+let OUTING_SUB_TEXT = "Just you, me & the stars 💫";
+let FINAL_SUB_TAIL = "Forever & always. ❤️";
+
+// ---------- TWO MODES: LOVE vs FAMILY/FRIEND ----------
+const MODE_DEFAULTS = {
+  love: {
+    greeting: "Hey my Love",
+    askLove: "Do you love me? 🥺",
+    outing: "So... can we go out tonight? 🌙✨",
+    outingSub: "Just you, me & the stars 💫",
+    finalText: "I Love You",
+    finalSubTail: "Forever & always. ❤️"
+  },
+  other: {
+    greeting: "Hey Superstar",
+    askLove: "Ready for your surprise? 🥳",
+    outing: "Let's celebrate today! 🎉",
+    outingSub: "Cake, laughs & lots of love 🎈",
+    finalText: "Love You Always",
+    finalSubTail: "Love you always. ❤️"
+  }
+};
+let CURRENT_MODE = 'love';
+
+function setMode(mode) {
+  if (!MODE_DEFAULTS[mode]) return;
+  CURRENT_MODE = mode;
+  const d = MODE_DEFAULTS[mode];
+
+  const loveBtn = document.getElementById('mode-love-btn');
+  const otherBtn = document.getElementById('mode-other-btn');
+  if (loveBtn) loveBtn.classList.toggle('active', mode === 'love');
+  if (otherBtn) otherBtn.classList.toggle('active', mode === 'other');
+
+  GREETING_TEXT = d.greeting;
+  ASK_LOVE_TEXT = d.askLove;
+  OUTING_TEXT = d.outing;
+  OUTING_SUB_TEXT = d.outingSub;
+  FINAL_TEXT = d.finalText;
+  FINAL_SUB_TAIL = d.finalSubTail;
+
+  const greetingInput = document.getElementById('input-greeting');
+  const askLoveInput = document.getElementById('input-asklove');
+  const outingInput = document.getElementById('input-outing');
+  const finalTextInput = document.getElementById('input-finaltext');
+  if (greetingInput) greetingInput.placeholder = d.greeting;
+  if (askLoveInput) askLoveInput.placeholder = d.askLove;
+  if (outingInput) outingInput.placeholder = d.outing;
+  if (finalTextInput) finalTextInput.placeholder = d.finalText;
+}
 
 // ---------- SCREEN 0: SETUP / PERSONALIZE ----------
 function parseLines(raw) {
@@ -777,7 +853,7 @@ function applyName(root, occasion, name) {
   const title = root.querySelector('#bday-title');
   const sub = root.querySelector('#final-sub');
   if (title) title.textContent = `${occasion} ${name} 🎂💖`;
-  if (sub) sub.textContent = `${occasion}, ${name}. Forever & always. ❤️`;
+  if (sub) sub.textContent = `${occasion}, ${name}. ${FINAL_SUB_TAIL}`;
 }
 
 function applyGreeting(root, greeting) {
@@ -805,6 +881,11 @@ function applyOuting(root, text) {
   if (el) el.textContent = text;
 }
 
+function applyOutingSub(root, text) {
+  const el = root.querySelector('#outing-sub-text');
+  if (el) el.textContent = text;
+}
+
 function collectShareData() {
   const finalTextVal = document.getElementById('input-finaltext').value.trim() || FINAL_TEXT;
   const askLoveVal = document.getElementById('input-asklove').value.trim() || ASK_LOVE_TEXT;
@@ -820,6 +901,8 @@ function collectShareData() {
     al: askLoveVal,
     rh: reasonsHeadingVal,
     ot: outingVal,
+    os: OUTING_SUB_TEXT,
+    fst: FINAL_SUB_TAIL,
     o: occasionVal,
     n: nameVal,
     g: greetingVal,
@@ -935,6 +1018,8 @@ function tryLoadFromShareLink() {
     if (data.al) ASK_LOVE_TEXT = data.al;
     if (data.rh) REASONS_HEADING_TEXT = data.rh;
     if (data.ot) OUTING_TEXT = data.ot;
+    if (data.os) OUTING_SUB_TEXT = data.os;
+    if (data.fst) FINAL_SUB_TAIL = data.fst;
     if (data.o) OCCASION_TEXT = data.o;
     if (data.n) RECIPIENT_NAME = data.n;
     if (data.g) GREETING_TEXT = data.g;
@@ -1134,6 +1219,7 @@ if (loadedFromLink || !document.getElementById('screen0')) {
   applyAskLove(document, ASK_LOVE_TEXT);
   applyReasonsHeading(document, REASONS_HEADING_TEXT);
   applyOuting(document, OUTING_TEXT);
+  applyOutingSub(document, OUTING_SUB_TEXT);
   const s0 = document.getElementById('screen0');
   if (s0) s0.classList.remove('active');
   totalButterflies = messages.length;
