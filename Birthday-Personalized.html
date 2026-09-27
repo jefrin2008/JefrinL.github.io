@@ -513,6 +513,9 @@
       <h1>Make it yours 💌</h1>
       <p class="setup-hint">Fill this in once — the surprise will use your own words.</p>
 
+      <label class="field-label" for="input-finaltext">Final message (shown big at the very end)</label>
+      <input type="text" id="input-finaltext" placeholder="I Love You">
+
       <div class="field-row">
         <div class="field-col">
           <label class="field-label" for="input-occasion">Occasion</label>
@@ -724,7 +727,7 @@ You made my normal days feel special... just by being there ✨"></textarea>
         <path class="finale-heart-shape" d="M75 118 C40 92 18 68 18 45 C18 26 33 14 50 14 C62 14 71 20 75 30 C79 20 88 14 100 14 C117 14 132 26 132 45 C132 68 110 92 75 118 Z" fill="url(#heartFill)"/>
       </svg>
     </div>
-    <h1 class="final-title">I Love You</h1>
+    <h1 class="final-title" id="final-title">I Love You</h1>
     <p class="final-sub" id="final-sub">Happy Birthday, unamed. Forever &amp; always. ❤️</p>
     <button class="replay-btn" onclick="restartExperience()">Watch it again ↺</button>
   </div>
@@ -742,6 +745,7 @@ const rand = (min, max) => Math.random() * (max - min) + min;
 /* DEFAULT_NAME_START */let RECIPIENT_NAME = "Unnamed";/* DEFAULT_NAME_END */
 /* DEFAULT_GREETING_START */let GREETING_TEXT = "Hey my Love";/* DEFAULT_GREETING_END */
 /* DEFAULT_OCCASION_START */let OCCASION_TEXT = "Happy Birthday";/* DEFAULT_OCCASION_END */
+/* DEFAULT_FINALTEXT_START */let FINAL_TEXT = "I Love You";/* DEFAULT_FINALTEXT_END */
 
 // ---------- SCREEN 0: SETUP / PERSONALIZE ----------
 function parseLines(raw) {
@@ -769,13 +773,20 @@ function applyGreeting(root, greeting) {
   if (title) title.textContent = `${greeting} 💖`;
 }
 
+function applyFinalText(root, finalText) {
+  const title = root.querySelector('#final-title');
+  if (title) title.textContent = finalText;
+}
+
 function collectShareData() {
+  const finalTextVal = document.getElementById('input-finaltext').value.trim() || FINAL_TEXT;
   const occasionVal = document.getElementById('input-occasion').value.trim() || OCCASION_TEXT;
   const nameVal = document.getElementById('input-name').value.trim() || RECIPIENT_NAME;
   const greetingVal = document.getElementById('input-greeting').value.trim() || GREETING_TEXT;
   const msgLines = parseLines(document.getElementById('input-messages').value);
   const reasonLines = parseReasonLines(document.getElementById('input-reasons').value);
   return {
+    f: finalTextVal,
     o: occasionVal,
     n: nameVal,
     g: greetingVal,
@@ -887,6 +898,7 @@ function tryLoadFromShareLink() {
   if (!raw) return false;
   try {
     const data = JSON.parse(decodeURIComponent(raw));
+    if (data.f) FINAL_TEXT = data.f;
     if (data.o) OCCASION_TEXT = data.o;
     if (data.n) RECIPIENT_NAME = data.n;
     if (data.g) GREETING_TEXT = data.g;
@@ -1082,6 +1094,7 @@ const loadedFromLink = tryLoadFromShareLink();
 if (loadedFromLink || !document.getElementById('screen0')) {
   applyName(document, OCCASION_TEXT, RECIPIENT_NAME);
   applyGreeting(document, GREETING_TEXT);
+  applyFinalText(document, FINAL_TEXT);
   const s0 = document.getElementById('screen0');
   if (s0) s0.classList.remove('active');
   totalButterflies = messages.length;
