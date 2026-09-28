@@ -298,11 +298,26 @@
     border: 1px solid rgba(255, 255, 255, 0.3);
     min-height: 70px;
     display: flex;
+    flex-direction: column;
+    gap: 12px;
     align-items: center;
     justify-content: center;
     transition: opacity 0.3s ease;
     position: relative;
     z-index: 1;
+  }
+
+  .note-photo {
+    display: none;
+    width: 100%;
+    max-width: 240px;
+    max-height: 220px;
+    object-fit: cover;
+    background: #fff;
+    padding: 6px 6px 6px;
+    border-radius: 6px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    transform: rotate(-2deg);
   }
 
   /* ---------- Screen 4: Gift box ---------- */
@@ -568,7 +583,7 @@
       <label class="field-label" for="input-messages">Some notes (one per line)</label>
       <textarea id="input-messages" rows="3" placeholder="I don't say this enough... but I really Like you ❤️
 You made my normal days feel special... just by being there ✨"></textarea>
-      <div class="field-hint">Leave blank for defaults. 6–8 lines works best.</div>
+      <div class="field-hint">Leave blank for defaults. 6–8 lines works best.<br>Want a photo with a note? Add <b>&nbsp;|&nbsp;photo link</b> at the end of that line, e.g. <i>I really like you ❤️ | photos/1.jpg</i> (photo files must be uploaded next to this page, or use an online image link).</div>
 
       <label class="field-label" for="input-reasons">Reasons you Like them (one per line)</label>
       <textarea id="input-reasons" rows="3" placeholder="💖 The way you laugh at your own jokes before you finish telling them.
@@ -627,6 +642,7 @@ You made my normal days feel special... just by being there ✨"></textarea>
     <p style="font-size: 0.85rem; margin-bottom: 15px;">Catch them all... each one has something to tell you ✨</p>
 
     <div class="note-popup" id="note-popup" aria-live="polite">
+      <img class="note-photo" id="note-photo" alt="" onerror="this.style.display='none'">
       <span id="note-text">Click a butterfly to reveal a message!</span>
     </div>
 
@@ -840,6 +856,16 @@ function parseLines(raw) {
   return raw.split('\n').map(s => s.trim()).filter(Boolean);
 }
 
+function parseNoteLines(raw) {
+  const texts = [], photos = [];
+  parseLines(raw).forEach(line => {
+    const m = line.match(/^(.*?)\s*\|\s*(\S+)$/);
+    if (m && m[1]) { texts.push(m[1]); photos.push(m[2]); }
+    else { texts.push(line); photos.push(''); }
+  });
+  return { texts, photos };
+}
+
 function parseReasonLines(raw) {
   const emojiRegex = /^(\p{Extended_Pictographic}(?:\uFE0F)?)\s*(.*)$/u;
   return parseLines(raw).map(line => {
@@ -894,7 +920,8 @@ function collectShareData() {
   const occasionVal = document.getElementById('input-occasion').value.trim() || OCCASION_TEXT;
   const nameVal = document.getElementById('input-name').value.trim() || RECIPIENT_NAME;
   const greetingVal = document.getElementById('input-greeting').value.trim() || GREETING_TEXT;
-  const msgLines = parseLines(document.getElementById('input-messages').value);
+  const noteData = parseNoteLines(document.getElementById('input-messages').value);
+  const msgLines = noteData.texts;
   const reasonLines = parseReasonLines(document.getElementById('input-reasons').value);
   return {
     f: finalTextVal,
@@ -907,6 +934,7 @@ function collectShareData() {
     n: nameVal,
     g: greetingVal,
     m: msgLines.length ? msgLines : messages,
+    p: msgLines.length ? noteData.photos : notePhotos,
     r: reasonLines.length ? reasonLines : reasons
   };
 }
@@ -1024,6 +1052,7 @@ function tryLoadFromShareLink() {
     if (data.n) RECIPIENT_NAME = data.n;
     if (data.g) GREETING_TEXT = data.g;
     if (Array.isArray(data.m) && data.m.length) messages = data.m;
+    if (Array.isArray(data.p)) notePhotos = data.p;
     if (Array.isArray(data.r) && data.r.length) reasons = data.r;
     return true;
   } catch (e) {
@@ -1065,6 +1094,7 @@ function goToScreen3() {
 /* DEFAULT_MESSAGES_START */
 let messages = ["I don't say this enough... but I really Like you \u2764\ufe0f","You made my normal days feel special... just by being there \u2728","I know I mess up sometimes... and I'm really sorry for that \ud83e\udd7a","But no matter what... I always Like you \u2764\ufe0f","You're the calm in every one of my storms \ud83c\udf19","Every memory with you is one I want to keep forever \ud83d\udcf8","Thank you for loving me exactly as I am \ud83e\udd0d","And today... I just want to see you smile \ud83d\ude0a"];
 /* DEFAULT_MESSAGES_END */
+let notePhotos = []; // optional photo (URL / relative path) per note, same order as `messages`
 
 const wingColors = [
   ['#ff8fd0', '#ff4fa8'],
@@ -1122,6 +1152,8 @@ function spawnButterflies() {
   totalButterflies = messages.length;
   document.getElementById('jar-fill').style.height = '0%';
   document.getElementById('note-text').innerText = 'Click a butterfly to reveal a message!';
+  const photoEl0 = document.getElementById('note-photo');
+  if (photoEl0) { photoEl0.style.display = 'none'; photoEl0.removeAttribute('src'); }
 
   messages.forEach((msg, i) => {
     const el = document.createElement('div');
@@ -1180,7 +1212,17 @@ function catchButterfly(bf, index) {
   notePopup.style.opacity = '0';
   setTimeout(() => {
     noteText.innerText = messages[index];
+    const photoEl = document.getElementById('note-photo');
+    const photoSrc = (notePhotos[index] || '').trim();
+    if (photoSrc && !/^\s*(javascript|data:text)/i.test(photoSrc)) {
+      photoEl.style.display = 'block';
+      photoEl.src = photoSrc;
+    } else {
+      photoEl.style.display = 'none';
+      photoEl.removeAttribute('src');
+    }
     notePopup.style.opacity = '1';
+    updateScrollHint();
   }, 200);
 
   const percent = (caughtCount / totalButterflies) * 100;
