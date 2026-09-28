@@ -658,9 +658,8 @@ You made my normal days feel special... just by being there ✨"></textarea>
       <div class="setup-btn-group">
         <button class="btn-yes" onclick="shareViaWhatsApp()">Create the Surprise ✨</button>
         <button class="btn-alt" type="button" onclick="startPreview()">👀 Preview it here</button>
-        <button class="btn-alt" type="button" onclick="downloadWithPhotos()">💾 Download copy with my photos</button>
       </div>
-      <div class="field-hint" style="text-align:center; margin-top:8px;">This opens WhatsApp with a link to your surprise. Needs this page hosted online first (e.g. GitHub Pages). Photos are too large for a link, so use “Download copy with my photos” and host that file.</div>
+      <div class="field-hint" style="text-align:center; margin-top:8px;">This opens WhatsApp with a link to your surprise. Needs this page hosted online first (e.g. GitHub Pages).</div>
     </div>
   </div>
 
@@ -859,9 +858,6 @@ You made my normal days feel special... just by being there ✨"></textarea>
 
 <script>
 'use strict';
-
-// Snapshot of this page as loaded (used by "Download copy with my photos")
-const ORIGINAL_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 
 // ---------- HELPERS ----------
 const rand = (min, max) => Math.random() * (max - min) + min;
@@ -1540,25 +1536,6 @@ function startPreview() {
   secondsBefore = 3;
   showScreen('screen1');
   tickClock();
-}
-
-function downloadWithPhotos() {
-  const startMark = 'DEFAULT_REASON' + 'IMAGES_START */';
-  const endMark = '/* DEFAULT_REASON' + 'IMAGES_END';
-  const a = ORIGINAL_HTML.indexOf(startMark);
-  const b = ORIGINAL_HTML.indexOf(endMark, a);
-  if (a === -1 || b === -1) { alert('Could not prepare the download.'); return; }
-  const html = ORIGINAL_HTML.slice(0, a + startMark.length) +
-    'let USER_REASON_IMAGES = ' + JSON.stringify(USER_REASON_IMAGES) + ';' +
-    ORIGINAL_HTML.slice(b);
-  const blob = new Blob([html], { type: 'text/html' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'Birthday-Personalized.html';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(link.href), 2000);
 }
 
 renderPhotoRows();
