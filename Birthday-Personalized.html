@@ -522,22 +522,58 @@
   }
   .photo-actions button.remove { background: rgba(255, 255, 255, 0.18); color: #fff; }
   .photo-actions button:hover { transform: scale(1.05); }
-  /* ---------- Setup: favorite song ---------- */
-  .song-row .photo-thumb { display: flex; align-items: center; justify-content: center; font-size: 1.5rem; width: 48px; }
-  .song-row.has-song { border-color: rgba(255, 209, 247, 0.6); background: rgba(255, 255, 255, 0.16); }
-  .song-badge {
-    display: inline-block; margin-top: 3px; padding: 1px 8px;
-    font-size: 0.62rem; letter-spacing: 0.4px; color: #6a0f6e;
-    background: rgba(255, 255, 255, 0.85); border-radius: 10px;
-  }
-  .song-busy { font-size: 0.7rem; color: #ffd1f7; margin-top: 4px; display: none; }
-  .song-busy.show { display: block; }
-  .song-row .photo-info span { white-space: normal; }
   .setup-btn-group .btn-alt {
     background: rgba(255, 255, 255, 0.16);
     border: 1px solid rgba(255, 255, 255, 0.35);
     color: #fff;
   }
+
+
+  /* ---------- Setup: favorite song ---------- */
+  .song-box {
+    margin: 4px 0 10px;
+    padding: 10px 12px 9px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px dashed rgba(255, 255, 255, 0.35);
+  }
+  .song-box .field-label { margin-top: 0; }
+  .song-add {
+    width: 100%;
+    padding: 9px 16px;
+    font-size: 0.85rem;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #fff;
+  }
+  .song-add:hover { transform: scale(1.02); }
+  .song-status { display: flex; align-items: center; gap: 10px; }
+  .song-status[hidden], .song-empty[hidden] { display: none; }
+  .song-icon {
+    width: 38px; height: 38px; flex: none;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.15rem;
+    background: linear-gradient(135deg, #ff4081, #ff77a9);
+  }
+  .song-info { flex: 1; min-width: 0; }
+  .song-info b {
+    display: block; font-size: 0.8rem; color: var(--gold);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .song-info span { display: block; font-size: 0.68rem; color: #ffe9f5; }
+  .song-box.loading .song-icon { animation: songPulse 1s ease-in-out infinite; }
+  .song-box.error .song-info span { color: #ffb3c1; }
+  @keyframes songPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.88); opacity: 0.6; } }
+  .song-actions { display: flex; gap: 6px; flex: none; }
+  .song-actions button {
+    padding: 6px 11px; font-size: 0.72rem; border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9); color: #6a0f6e;
+  }
+  .song-actions button.remove { background: rgba(255, 255, 255, 0.18); color: #fff; }
+  .song-actions button:hover { transform: scale(1.05); }
+  .song-actions[hidden] { display: none; }
 
   /* ---------- Screen 6: Finale ---------- */
   .finale-heart-wrap { width: 150px; margin: 0 auto 18px; position: relative; }
@@ -618,6 +654,26 @@
       <h1>Make it yours 💌</h1>
       <p class="setup-hint">Fill this in once — the surprise will use your own words.</p>
 
+      <div class="song-box" id="song-box">
+        <label class="field-label">🎵 Favorite Song</label>
+        <input type="file" id="song-file" accept="audio/*" hidden>
+        <div class="song-empty" id="song-empty">
+          <button type="button" class="song-add" onclick="document.getElementById('song-file').click()">＋ Add favorite song</button>
+          <div class="field-hint">We'll automatically pick the best 30 seconds. It plays while the photos &amp; notes are shown.</div>
+        </div>
+        <div class="song-status" id="song-status" hidden>
+          <div class="song-icon" id="song-icon">🎵</div>
+          <div class="song-info">
+            <b id="song-name"></b>
+            <span id="song-detail"></span>
+          </div>
+          <div class="song-actions" id="song-actions" hidden>
+            <button type="button" id="song-preview-btn" onclick="toggleSongPreview()">▶ Preview</button>
+            <button type="button" class="remove" onclick="removeSong()">Remove</button>
+          </div>
+        </div>
+      </div>
+
       <label class="field-label">Who is this for?</label>
       <div class="mode-toggle" id="modeToggle">
         <button type="button" class="mode-btn active" id="mode-love-btn" onclick="setMode('love')">💕 Love</button>
@@ -650,20 +706,6 @@
 
       <label class="field-label" for="input-greeting">Pet name / greeting</label>
       <input type="text" id="input-greeting" placeholder="e.g. Hey Sweetheart">
-
-      <label class="field-label">Favorite Song 🎵 (optional)</label>
-      <div class="photo-row song-row" id="song-row">
-        <div class="photo-thumb" id="song-thumb">🎵</div>
-        <div class="photo-info">
-          <b id="song-title">No song selected</b>
-          <span id="song-sub">Add a song — we'll pick the best 30 seconds for you.</span>
-          <em class="song-badge" id="song-badge" hidden>✂️ Auto-trimmed to 30 s</em>
-        </div>
-        <div class="photo-actions" id="song-actions"></div>
-      </div>
-      <div class="song-busy" id="song-busy">Finding the best 30 seconds…</div>
-      <div class="field-hint">Plays automatically with your notes and photos, then stops after 30 seconds.</div>
-      <input type="file" id="song-file" accept="audio/*" hidden>
 
       <label class="field-label" for="input-messages">Some notes (one per line)</label>
       <textarea id="input-messages" rows="3" placeholder="I don't say this enough... but I really Like you ❤️
@@ -890,12 +932,6 @@ const rand = (min, max) => Math.random() * (max - min) + min;
 /* DEFAULT_NAME_START */let RECIPIENT_NAME = "Unnamed";/* DEFAULT_NAME_END */
 /* DEFAULT_GREETING_START */let GREETING_TEXT = "Hey my Love";/* DEFAULT_GREETING_END */
 /* DEFAULT_REASONIMAGES_START */let USER_REASON_IMAGES = {};/* DEFAULT_REASONIMAGES_END */
-/* DEFAULT_SONG_START */let USER_SONG = "";/* DEFAULT_SONG_END */
-let USER_SONG_NAME = "";
-let USER_SONG_INFO = "";
-let songAudio = null;
-let songPreviewing = false;
-const SONG_SECONDS = 30;
 /* DEFAULT_OCCASION_START */let OCCASION_TEXT = "Happy Birthday";/* DEFAULT_OCCASION_END */
 /* DEFAULT_FINALTEXT_START */let FINAL_TEXT = "I Love You";/* DEFAULT_FINALTEXT_END */
 /* DEFAULT_ASKLOVE_START */let ASK_LOVE_TEXT = "Do you love me? 🥺";/* DEFAULT_ASKLOVE_END */
@@ -1046,11 +1082,226 @@ function shareViaWhatsApp() {
   window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank');
 }
 
+// ---------- FAVORITE SONG (auto 30-second clip) ----------
+const SONG_CLIP_SECONDS = 30;
+let songCtx = null;
+let SONG_CLIP = null;          // { buffer, name, start }
+let songSource = null;
+let songGain = null;
+let songLoadToken = 0;
+
+function getSongCtx() {
+  if (!songCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    songCtx = new AC();
+  }
+  return songCtx;
+}
+
+function decodeAudio(ctx, arrayBuffer) {
+  return new Promise((resolve, reject) => {
+    const p = ctx.decodeAudioData(arrayBuffer, resolve, reject);
+    if (p && p.catch) p.catch(reject);
+  });
+}
+
+const fmtTime = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+
+// Looks for the loudest, most sustained stretch (usually the chorus), preferring one that
+// starts where the energy jumps up, and avoiding the intro and the fade-out.
+function findBestClipStart(buf, clipLen) {
+  const dur = buf.duration;
+  if (dur <= clipLen + 1) return 0;
+
+  const hop = 0.25;
+  const hopN = Math.max(1, Math.floor(buf.sampleRate * hop));
+  const n = Math.floor(buf.length / hopN);
+  const W = Math.round(clipLen / hop);
+  if (n <= W) return 0;
+
+  const chans = [];
+  for (let c = 0; c < buf.numberOfChannels; c++) chans.push(buf.getChannelData(c));
+
+  // Loudness envelope (perceptually compressed RMS per 0.25s)
+  const env = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    let sum = 0, cnt = 0;
+    const a = i * hopN, b = a + hopN;
+    for (let c = 0; c < chans.length; c++) {
+      const d = chans[c];
+      for (let j = a; j < b; j += 4) { sum += d[j] * d[j]; cnt++; }
+    }
+    env[i] = Math.sqrt(Math.sqrt(sum / Math.max(1, cnt)));
+  }
+
+  const P = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) P[i + 1] = P[i] + env[i];
+  const mean = (a, b) => (P[b] - P[a]) / Math.max(1, b - a);
+  const g = mean(0, n) || 1e-6;
+
+  const L = 12; // 3s look-behind / look-ahead for the "energy jump" check
+  let best = 0, bestScore = -Infinity;
+  for (let s = 0; s <= n - W; s++) {
+    const startT = s * hop;
+    const endT = startT + clipLen;
+    const centerFrac = (startT + clipLen / 2) / dur;
+
+    let score = mean(s, s + W) / g;
+    score *= 1 - 0.25 * Math.min(1, Math.abs(centerFrac - 0.45) / 0.45);
+    if (startT < dur * 0.08) score *= 0.85;
+    if (endT > dur * 0.92) score *= 0.85;
+    if (s >= L) score += 0.5 * Math.max(0, mean(s, s + L) - mean(s - L, s)) / g;
+
+    if (score > bestScore) { bestScore = score; best = s; }
+  }
+
+  // Snap the cut to the quietest nearby moment so it starts cleanly
+  let snapped = best, minV = Infinity;
+  for (let k = -3; k <= 3; k++) {
+    const i = best + k;
+    if (i < 0 || i > n - W) continue;
+    if (env[i] < minV) { minV = env[i]; snapped = i; }
+  }
+  return snapped * hop;
+}
+
+function cutClip(buf, startSec, len) {
+  const sr = buf.sampleRate;
+  const a = Math.floor(startSec * sr);
+  const count = Math.min(Math.floor(len * sr), buf.length - a);
+  const out = getSongCtx().createBuffer(buf.numberOfChannels, count, sr);
+  for (let c = 0; c < buf.numberOfChannels; c++) {
+    out.copyToChannel(buf.getChannelData(c).slice(a, a + count), c);
+  }
+  return out;
+}
+
+function setSongUI(state, name, detail) {
+  const box = document.getElementById('song-box');
+  const empty = document.getElementById('song-empty');
+  const status = document.getElementById('song-status');
+  const actions = document.getElementById('song-actions');
+  box.classList.toggle('loading', state === 'loading');
+  box.classList.toggle('error', state === 'error');
+  empty.hidden = state === 'ready' || state === 'loading';
+  status.hidden = state === 'empty' || state === 'error';
+  actions.hidden = state !== 'ready';
+  if (state === 'empty' || state === 'error') empty.hidden = false;
+  document.getElementById('song-name').textContent = name || '';
+  document.getElementById('song-detail').textContent = detail || '';
+  if (state === 'error') {
+    status.hidden = false;
+    document.getElementById('song-icon').textContent = '⚠️';
+  } else {
+    document.getElementById('song-icon').textContent = '🎵';
+  }
+}
+
+async function handleSongFile(file) {
+  if (!file) return;
+  const token = ++songLoadToken;
+  const name = file.name.replace(/\.[^.]+$/, '');
+  stopSong(true);
+  SONG_CLIP = null;
+  setSongUI('loading', name, 'Finding the best 30 seconds…');
+  try {
+    const ctx = getSongCtx();
+    if (!ctx) throw new Error('no audio support');
+    if (ctx.state === 'suspended') ctx.resume();
+    const decoded = await decodeAudio(ctx, await file.arrayBuffer());
+    if (token !== songLoadToken) return;
+    // let the "finding" message paint before the analysis loop runs
+    await new Promise(r => setTimeout(r, 30));
+    const start = findBestClipStart(decoded, SONG_CLIP_SECONDS);
+    const len = Math.min(SONG_CLIP_SECONDS, decoded.duration - start);
+    SONG_CLIP = { buffer: cutClip(decoded, start, len), name, start };
+    setSongUI('ready', name, `Best 30s picked · from ${fmtTime(start)}`);
+  } catch (e) {
+    if (token !== songLoadToken) return;
+    SONG_CLIP = null;
+    setSongUI('error', name, "Couldn't read that file. Try an MP3, M4A or WAV.");
+  }
+}
+
+function removeSong() {
+  songLoadToken++;
+  stopSong(true);
+  SONG_CLIP = null;
+  const input = document.getElementById('song-file');
+  if (input) input.value = '';
+  setSongUI('empty');
+}
+
+function startSong() {
+  if (!SONG_CLIP) return;
+  const ctx = getSongCtx();
+  if (!ctx) return;
+  stopSong(true);
+  if (ctx.state === 'suspended') ctx.resume();
+
+  const src = ctx.createBufferSource();
+  src.buffer = SONG_CLIP.buffer;
+  const gain = ctx.createGain();
+  const t = ctx.currentTime + 0.05;
+  const d = SONG_CLIP.buffer.duration;
+  const fadeIn = Math.min(1.2, d / 4), fadeOut = Math.min(2, d / 4);
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(1, t + fadeIn);
+  gain.gain.setValueAtTime(1, t + d - fadeOut);
+  gain.gain.linearRampToValueAtTime(0, t + d);
+  src.connect(gain);
+  gain.connect(ctx.destination);
+  src.onended = () => {
+    if (songSource === src) { songSource = null; songGain = null; }
+    updateSongPreviewBtn();
+  };
+  src.start(t);
+  songSource = src;
+  songGain = gain;
+  updateSongPreviewBtn();
+}
+
+function stopSong(immediate) {
+  if (!songSource) return;
+  const src = songSource, gain = songGain;
+  songSource = null; songGain = null;
+  try {
+    if (immediate) {
+      src.onended = null;
+      src.stop();
+    } else {
+      const t = songCtx.currentTime;
+      gain.gain.cancelScheduledValues(t);
+      gain.gain.setValueAtTime(gain.gain.value, t);
+      gain.gain.linearRampToValueAtTime(0, t + 0.6);
+      src.stop(t + 0.65);
+    }
+  } catch (e) { /* already stopped */ }
+  updateSongPreviewBtn();
+}
+
+function toggleSongPreview() {
+  if (songSource) stopSong(true); else startSong();
+}
+
+function updateSongPreviewBtn() {
+  const btn = document.getElementById('song-preview-btn');
+  if (btn) btn.textContent = songSource ? '■ Stop' : '▶ Preview';
+}
+
+(function initSongPicker() {
+  const input = document.getElementById('song-file');
+  if (input) input.addEventListener('change', () => handleSongFile(input.files[0]));
+})();
+
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0, 0);
   updateScrollHint();
+  // The 30s song plays only while the photos + notes screen is showing
+  if (id === 'screen4b') startSong(); else stopSong(false);
 }
 
 // ---------- SCROLL HINT (shows only when the active screen is taller than the viewport) ----------
@@ -1176,7 +1427,6 @@ function dodgeNo() {
 function goToScreen3() {
   showScreen('screen3');
   spawnButterflies();
-  playSong();
 }
 
 // ---------- SCREEN 3: BUTTERFLY GAME ----------
@@ -1550,214 +1800,8 @@ function handlePhotoFile(file) {
   if (ta) ta.addEventListener('input', renderPhotoRows);
 })();
 
-// ---------- FAVORITE SONG (auto-trim to 30 s) ----------
-function fmtTime(sec) {
-  sec = Math.max(0, Math.round(sec));
-  return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
-}
-
-// Pick the most energetic 30 s stretch (usually the chorus) so no manual trimming is needed.
-function pickBestStart(buffer, seconds) {
-  const sr = buffer.sampleRate;
-  const total = buffer.duration;
-  if (total <= seconds) return 0;
-  const frames = Math.floor(total);
-  const ch0 = buffer.getChannelData(0);
-  const ch1 = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : null;
-  const rms = new Float64Array(frames);
-  for (let f = 0; f < frames; f++) {
-    const a = Math.floor(f * sr), b = Math.min(ch0.length, Math.floor((f + 1) * sr));
-    let sum = 0;
-    for (let i = a; i < b; i += 4) {
-      const v = ch1 ? (ch0[i] + ch1[i]) * 0.5 : ch0[i];
-      sum += v * v;
-    }
-    rms[f] = Math.sqrt(sum / Math.max(1, (b - a) / 4));
-  }
-  const win = Math.min(seconds, frames);
-  let cur = 0;
-  for (let i = 0; i < win; i++) cur += rms[i];
-  let best = cur, bestStart = 0;
-  const lastStart = Math.max(0, Math.floor(total - seconds));
-  for (let start = 1; start <= lastStart && start + win <= frames; start++) {
-    cur += rms[start + win - 1] - rms[start - 1];
-    if (cur > best * 1.02) { best = cur; bestStart = start; } // small bias toward earlier ties
-  }
-  return bestStart;
-}
-
-function encodeWav(samples, sampleRate) {
-  const buf = new ArrayBuffer(44 + samples.length * 2);
-  const v = new DataView(buf);
-  const w = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
-  w(0, 'RIFF'); v.setUint32(4, 36 + samples.length * 2, true); w(8, 'WAVE'); w(12, 'fmt ');
-  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
-  v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 2, true);
-  v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, samples.length * 2, true);
-  for (let i = 0; i < samples.length; i++) {
-    const x = Math.max(-1, Math.min(1, samples[i]));
-    v.setInt16(44 + i * 2, x < 0 ? x * 0x8000 : x * 0x7fff, true);
-  }
-  return new Blob([buf], { type: 'audio/wav' });
-}
-
-function blobToDataURL(blob) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result);
-    r.onerror = () => rej(r.error);
-    r.readAsDataURL(blob);
-  });
-}
-
-async function processSongFile(file) {
-  const Ctx = window.AudioContext || window.webkitAudioContext;
-  if (!Ctx) throw new Error('Audio not supported in this browser');
-  const ctx = new Ctx();
-  try {
-    const arr = await file.arrayBuffer();
-    const buffer = await new Promise((res, rej) => ctx.decodeAudioData(arr, res, rej));
-    const sr = buffer.sampleRate;
-    const start = pickBestStart(buffer, SONG_SECONDS);
-    const len = Math.min(Math.floor(SONG_SECONDS * sr), buffer.length - Math.floor(start * sr));
-    const ch0 = buffer.getChannelData(0);
-    const ch1 = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : null;
-    const out = new Float32Array(len);
-    const off = Math.floor(start * sr);
-    const fadeIn = Math.floor(0.6 * sr), fadeOut = Math.floor(1.5 * sr);
-    for (let i = 0; i < len; i++) {
-      let x = ch1 ? (ch0[off + i] + ch1[off + i]) * 0.5 : ch0[off + i];
-      if (i < fadeIn) x *= i / fadeIn;
-      if (i > len - fadeOut) x *= Math.max(0, (len - i) / fadeOut);
-      out[i] = x;
-    }
-    const wav = encodeWav(out, sr);
-    const url = await blobToDataURL(wav);
-    const trimmed = buffer.duration > SONG_SECONDS + 0.5;
-    return {
-      url,
-      info: trimmed
-        ? `Using ${fmtTime(start)} – ${fmtTime(start + SONG_SECONDS)} of ${fmtTime(buffer.duration)}`
-        : `Full song (${fmtTime(buffer.duration)}) — already under 30 s`,
-      trimmed
-    };
-  } finally {
-    if (ctx.close) ctx.close();
-  }
-}
-
-function stopSong() {
-  if (songAudio) {
-    songAudio.pause();
-    try { songAudio.currentTime = 0; } catch (e) {}
-  }
-  songPreviewing = false;
-  renderSongRow();
-}
-
-function getSongAudio() {
-  if (!USER_SONG) return null;
-  if (!songAudio || songAudio.dataset.src !== USER_SONG) {
-    if (songAudio) songAudio.pause();
-    songAudio = new Audio(USER_SONG);
-    songAudio.dataset.src = USER_SONG;
-    songAudio.preload = 'auto';
-    // Hard stop at 30 s no matter what
-    songAudio.addEventListener('timeupdate', () => {
-      if (songAudio.currentTime >= SONG_SECONDS) { songAudio.pause(); songAudio.currentTime = 0; }
-    });
-    songAudio.addEventListener('ended', () => { songPreviewing = false; renderSongRow(); });
-  }
-  return songAudio;
-}
-
-// Called when the notes/photos begin: starts from 0:00 and ends by itself after ≤30 s.
-function playSong() {
-  const a = getSongAudio();
-  if (!a) return;
-  a.currentTime = 0;
-  const p = a.play();
-  if (p && p.catch) p.catch(() => {});
-}
-
-function toggleSongPreview() {
-  const a = getSongAudio();
-  if (!a) return;
-  if (songPreviewing) { stopSong(); return; }
-  a.currentTime = 0;
-  songPreviewing = true;
-  const p = a.play();
-  if (p && p.catch) p.catch(() => { songPreviewing = false; renderSongRow(); });
-  renderSongRow();
-}
-
-function renderSongRow() {
-  const row = document.getElementById('song-row');
-  if (!row) return;
-  const has = !!USER_SONG;
-  row.classList.toggle('has-song', has);
-  document.getElementById('song-title').textContent = has ? ('🎵 ' + (USER_SONG_NAME || 'Favorite song')) : 'No song selected';
-  document.getElementById('song-sub').textContent = has
-    ? (USER_SONG_INFO || '30-second clip ready')
-    : "Add a song — we'll pick the best 30 seconds for you.";
-  const badge = document.getElementById('song-badge');
-  badge.hidden = !has;
-
-  const actions = document.getElementById('song-actions');
-  actions.innerHTML = '';
-  const mk = (text, cls, fn) => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.textContent = text; if (cls) b.className = cls; b.onclick = fn;
-    actions.appendChild(b);
-  };
-  if (has) {
-    mk(songPreviewing ? '⏸ Stop' : '▶ Play', '', toggleSongPreview);
-    mk('Replace', '', pickSong);
-    mk('Remove', 'remove', () => {
-      stopSong(); USER_SONG = ''; USER_SONG_NAME = ''; USER_SONG_INFO = ''; songAudio = null; renderSongRow();
-    });
-  } else {
-    mk('Add song', '', pickSong);
-  }
-}
-
-function pickSong() {
-  const input = document.getElementById('song-file');
-  input.value = '';
-  input.click();
-}
-
-async function handleSongFile(file) {
-  if (!file) return;
-  if (!(file.type.startsWith('audio/') || /\.(mp3|m4a|aac|wav|ogg|oga|flac|webm|opus)$/i.test(file.name))) {
-    alert('Please choose an audio file (like MP3, M4A or WAV).');
-    return;
-  }
-  const busy = document.getElementById('song-busy');
-  busy.classList.add('show');
-  stopSong();
-  try {
-    const r = await processSongFile(file);
-    USER_SONG = r.url;
-    USER_SONG_NAME = file.name.replace(/\.[^.]+$/, '');
-    USER_SONG_INFO = r.info;
-    songAudio = null;
-  } catch (e) {
-    alert("Sorry, this song couldn't be read. Try an MP3, M4A or WAV file.");
-  }
-  busy.classList.remove('show');
-  renderSongRow();
-}
-
-(function initSongPicker() {
-  const input = document.getElementById('song-file');
-  if (input) input.addEventListener('change', () => handleSongFile(input.files[0]));
-  renderSongRow();
-})();
-
 // ---------- PREVIEW + DOWNLOAD ----------
 function startPreview() {
-  stopSong();
   const d = collectShareData();
   FINAL_TEXT = d.f; ASK_LOVE_TEXT = d.al; REASONS_HEADING_TEXT = d.rh;
   OUTING_TEXT = d.ot; OCCASION_TEXT = d.o; RECIPIENT_NAME = d.n; GREETING_TEXT = d.g;
@@ -1857,7 +1901,6 @@ function showFinalLove() {
 
 function restartExperience() {
   stopConfetti();
-  stopSong();
   document.getElementById('gift-wrap').classList.remove('opened');
   noClickCount = 0;
   document.getElementById('sub-msg').innerText = '';
