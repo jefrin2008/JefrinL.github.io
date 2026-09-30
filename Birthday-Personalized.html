@@ -575,6 +575,25 @@
   .song-actions button:hover { transform: scale(1.05); }
   .song-actions[hidden] { display: none; }
 
+  /* ---------- Screen 4c: Video clip ---------- */
+  .video-stage {
+    width: 100%;
+    border-radius: 22px;
+    overflow: hidden;
+    background: #000;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  }
+  .video-stage video { width: 100%; max-height: 62vh; display: block; background: #000; }
+  .video-tools { margin: 14px 0 16px; display: flex; justify-content: center; }
+  .video-sound-btn {
+    padding: 8px 18px; font-size: 0.78rem; border-radius: 18px;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #fff;
+  }
+  .video-sound-btn:hover { transform: scale(1.04); }
+
   /* ---------- Screen 6: Finale ---------- */
   .finale-heart-wrap { width: 150px; margin: 0 auto 18px; position: relative; }
   .finale-heart-wrap svg { width: 100%; height: auto; overflow: visible; }
@@ -670,6 +689,25 @@
           <div class="song-actions" id="song-actions" hidden>
             <button type="button" id="song-preview-btn" onclick="toggleSongPreview()">▶ Preview</button>
             <button type="button" class="remove" onclick="removeSong()">Remove</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="song-box" id="video-box">
+        <label class="field-label">🎬 Video Clip</label>
+        <input type="file" id="video-file" accept="video/*,.mp4,.m4v,.mov,.webm,.mkv,.avi,.3gp,.ogv" hidden>
+        <div class="song-empty" id="video-empty">
+          <button type="button" class="song-add" onclick="document.getElementById('video-file').click()">＋ Add video clip</button>
+          <div class="field-hint">Plays right after the photos &amp; notes, with your song. MP4 works everywhere; MOV, WebM, M4V work if your browser supports them. (Video can't travel inside the WhatsApp link.)</div>
+        </div>
+        <div class="song-status" id="video-status" hidden>
+          <div class="song-icon" id="video-icon">🎬</div>
+          <div class="song-info">
+            <b id="video-name"></b>
+            <span id="video-detail"></span>
+          </div>
+          <div class="song-actions" id="video-actions" hidden>
+            <button type="button" class="remove" onclick="removeVideo()">Remove</button>
           </div>
         </div>
       </div>
@@ -844,6 +882,17 @@ You made my normal days feel special... just by being there ✨"></textarea>
     </div>
     <div class="dots" id="reason-dots"></div>
     <button class="btn-yes" id="reason-next-btn" onclick="nextReason()">Next →</button>
+  </div>
+
+  <div id="screen4c" class="screen">
+    <h2 class="reasons-title">One more thing... 🎬</h2>
+    <div class="video-stage">
+      <video id="memory-video" playsinline controls controlsList="nodownload" preload="auto"></video>
+    </div>
+    <div class="video-tools">
+      <button type="button" class="video-sound-btn" id="video-sound-btn" onclick="toggleVideoSound()">🔊 Use video sound</button>
+    </div>
+    <button class="btn-yes" onclick="goToScreen5()">Continue →</button>
   </div>
 
   <div id="screen5" class="screen">
@@ -1295,13 +1344,143 @@ function updateSongPreviewBtn() {
   if (input) input.addEventListener('change', () => handleSongFile(input.files[0]));
 })();
 
+// ---------- VIDEO CLIP (plays after the photos + notes, together with the song) ----------
+let VIDEO_CLIP = null;          // { url, name }
+let videoLoadToken = 0;
+
+const fmtBytes = b => b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+
+function setVideoUI(state, name, detail) {
+  const box = document.getElementById('video-box');
+  const empty = document.getElementById('video-empty');
+  const status = document.getElementById('video-status');
+  const actions = document.getElementById('video-actions');
+  box.classList.toggle('loading', state === 'loading');
+  box.classList.toggle('error', state === 'error');
+  empty.hidden = state === 'ready' || state === 'loading';
+  status.hidden = state === 'empty';
+  actions.hidden = state !== 'ready';
+  document.getElementById('video-name').textContent = name || '';
+  document.getElementById('video-detail').textContent = detail || '';
+  document.getElementById('video-icon').textContent = state === 'error' ? '⚠️' : '🎬';
+}
+
+function clearVideo() {
+  videoLoadToken++;
+  if (VIDEO_CLIP) { try { URL.revokeObjectURL(VIDEO_CLIP.url); } catch (e) {} }
+  VIDEO_CLIP = null;
+  const v = document.getElementById('memory-video');
+  if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
+}
+
+function removeVideo() {
+  clearVideo();
+  const input = document.getElementById('video-file');
+  if (input) input.value = '';
+  setVideoUI('empty');
+}
+
+// Any format the browser can decode works (MP4/H.264, WebM, MOV, M4V...). We test-load the file first,
+// so an unsupported one is reported right away instead of failing later during the surprise.
+function handleVideoFile(file) {
+  if (!file) return;
+  clearVideo();
+  const token = videoLoadToken;
+  const name = file.name.replace(/\.[^.]+$/, '');
+  setVideoUI('loading', name, 'Checking the clip…');
+
+  const url = URL.createObjectURL(file);
+  const probe = document.createElement('video');
+  probe.preload = 'metadata';
+  probe.muted = true;
+  probe.playsInline = true;
+
+  let settled = false;
+  const fail = () => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    try { URL.revokeObjectURL(url); } catch (e) {}
+    if (token !== videoLoadToken) return;
+    setVideoUI('error', name, "This browser can't play that format. Please use an MP4 (H.264) or WebM file.");
+  };
+  const timer = setTimeout(fail, 10000);
+
+  probe.onloadedmetadata = () => {
+    if (settled) return;
+    if (!probe.videoWidth) { fail(); return; }   // audio-only, or video track the browser can't decode
+    settled = true;
+    clearTimeout(timer);
+    if (token !== videoLoadToken) { try { URL.revokeObjectURL(url); } catch (e) {} return; }
+    VIDEO_CLIP = { url, name };
+    const dur = isFinite(probe.duration) ? fmtTime(probe.duration) + ' · ' : '';
+    setVideoUI('ready', name, dur + fmtBytes(file.size));
+  };
+  probe.onerror = fail;
+  probe.src = url;
+}
+
+(function initVideoPicker() {
+  const input = document.getElementById('video-file');
+  if (input) input.addEventListener('change', () => handleVideoFile(input.files[0]));
+
+  const v = document.getElementById('memory-video');
+  if (!v) return;
+  // Only one audio source at a time: if the video's own sound is switched on, the song steps aside.
+  v.addEventListener('volumechange', () => {
+    if (!document.getElementById('screen4c').classList.contains('active')) return;
+    if (!v.muted && v.volume > 0) stopSong(false);
+    else if (v.muted && SONG_CLIP && !songSource) startSong();
+    updateVideoSoundBtn();
+  });
+  v.addEventListener('play', () => {
+    if (v.muted && SONG_CLIP && !songSource) startSong();
+  });
+  v.addEventListener('pause', () => { /* song keeps its own 30s timeline */ });
+})();
+
+function updateVideoSoundBtn() {
+  const v = document.getElementById('memory-video');
+  const btn = document.getElementById('video-sound-btn');
+  if (!v || !btn) return;
+  btn.hidden = false;
+  if (v.muted) btn.textContent = '🔊 Use video sound';
+  else btn.textContent = SONG_CLIP ? '🎵 Use my song instead' : '🔇 Mute video';
+}
+
+function toggleVideoSound() {
+  const v = document.getElementById('memory-video');
+  v.muted = !v.muted;   // the 'volumechange' handler swaps the song on/off
+  if (!v.muted && v.volume === 0) v.volume = 1;
+  updateVideoSoundBtn();
+}
+
+function pauseVideo() {
+  const v = document.getElementById('memory-video');
+  if (v && !v.paused) v.pause();
+}
+
+function goToVideo() {
+  const v = document.getElementById('memory-video');
+  if (v.getAttribute('src') !== VIDEO_CLIP.url) v.src = VIDEO_CLIP.url;
+  showScreen('screen4c');                 // also keeps / restarts the song
+  v.currentTime = 0;
+  v.muted = !!SONG_CLIP;                  // song + video together: the song is the sound, video plays silently
+  updateVideoSoundBtn();
+  const p = v.play();
+  if (p && p.catch) p.catch(() => { /* autoplay blocked: the player controls are right there */ });
+}
+
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0, 0);
   updateScrollHint();
-  // The 30s song plays only while the photos + notes screen is showing
-  if (id === 'screen4b') startSong(); else stopSong(false);
+  // The song plays on the photos + notes screen, and keeps going (or restarts) on the video screen
+  if (id === 'screen4b') startSong();
+  else if (id === 'screen4c') { if (!songSource) startSong(); }
+  else stopSong(false);
+  if (id !== 'screen4c') pauseVideo();
 }
 
 // ---------- SCROLL HINT (shows only when the active screen is taller than the viewport) ----------
@@ -1845,6 +2024,8 @@ function nextReason() {
   if (reasonIndex < reasons.length - 1) {
     reasonIndex++;
     renderReason();
+  } else if (VIDEO_CLIP) {
+    goToVideo();
   } else {
     goToScreen5();
   }
